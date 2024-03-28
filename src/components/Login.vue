@@ -1,4 +1,28 @@
-<script>
+<script setup>
+import axios from "axios";
+import { ref, warn } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const form = ref({
+  email: "",
+  password: "",
+});
+
+const handleLogin = async () => {
+  try {
+    const response = await axios.post("api/login", {
+      email: form.value.email,
+      password: form.value.password,
+    });
+    const token = response.data.token;
+    localStorage.setItem('token', token);
+    router.push("/");
+  } catch (error) {
+    console.error("Login failed:", error.response.data);
+  }
+};
+
 </script>
 
 <template>
@@ -6,17 +30,11 @@
     <div
       class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0"
     >
-      <a
-        href="#"
+      <router-link
+        :to="{ name: 'Home' }"
         class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white"
-      >
-        <img
-          class="w-8 h-8 mr-2"
-          src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/logo.svg"
-          alt="logo"
-        />
-        Flowbite
-      </a>
+        >Taskify
+      </router-link>
       <div
         class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700"
       >
@@ -26,7 +44,7 @@
           >
             Sign in to your account
           </h1>
-          <form class="space-y-4 md:space-y-6" action="#">
+          <form class="space-y-4 md:space-y-6" @submit.prevent="handleLogin">
             <div>
               <label
                 for="email"
@@ -34,6 +52,7 @@
                 >Your email</label
               >
               <input
+                v-model="form.email"
                 type="email"
                 name="email"
                 id="email"
@@ -49,6 +68,7 @@
                 >Password</label
               >
               <input
+                v-model="form.password"
                 type="password"
                 name="password"
                 id="password"
@@ -88,10 +108,11 @@
             </button>
             <p class="text-sm font-light text-gray-500 dark:text-gray-400">
               Don’t have an account yet?
-              <a
+              <router-link
+                :to="{ name: 'Register' }"
                 href="#"
                 class="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                >Sign up</a
+                >Sign up</router-link
               >
             </p>
           </form>
