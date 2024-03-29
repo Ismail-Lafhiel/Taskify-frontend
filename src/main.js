@@ -5,6 +5,7 @@ import router from './router'
 import './axios'
 import App from './App.vue'
 import './index.css'
+import 'flowbite'
 
 const pinia = createPinia()
 const app = createApp(App)
