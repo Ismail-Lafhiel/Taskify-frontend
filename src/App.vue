@@ -1,3 +1,4 @@
+<!-- App.vue -->
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
@@ -6,27 +7,57 @@ import Nav from "./components/Nav.vue";
 
 const user = ref(null);
 const router = useRouter();
+let isFetching = false;
 
-onMounted(async () => {
+// Function to fetch user data from the server
+const fetchUserData = async () => {
+  // If a request is already pending, do not send another one
+  if (isFetching) return;
+
   try {
+    isFetching = true;
+
+    // Retrieve the authentication token from localStorage
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
       return;
     }
+
+    // Make the API call to fetch user data
     const response = await axios.get("/api/user", {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`, // Include the token in the request headers
       },
     });
+
+    // Update the user data with the response
     user.value = response.data.user;
-    // console.log(user.value);
+    console.log("User data:", user.value); // Log user data here if needed
   } catch (error) {
-    console.error("Unauthenticated:", error.response.data);
-    router.push("/login");
+    console.error("Error fetching user data:", error);
+    if (error.response && error.response.status === 429) {
+      console.error("Too many requests. Please try again later.");
+    } else {
+      // Handle other errors or redirect to login page
+      router.push("/login");
+    }
+  } finally {
+    // Reset the flag after the request is complete
+    isFetching = false;
   }
+};
+
+// Call the fetchUserData function when the component is mounted
+onMounted(() => {
+  // Initial fetch
+  fetchUserData();
+
+  // Set up interval to fetch data every 5 seconds
+  // setInterval(fetchUserData, 5000);
 });
 
+// Function to log out the user
 const logout = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -40,7 +71,7 @@ const logout = async () => {
       },
     });
     localStorage.removeItem("token");
-    user.value = null; // Clear user data
+    user.value = null;
     router.push("/login");
   } catch (error) {
     console.error("Logout failed:", error);
@@ -48,19 +79,7 @@ const logout = async () => {
 };
 </script>
 
-<script>
-import Nav from "./components/Nav.vue";
-
-export default {
-  components: {
-    Nav,
-  },
-};
-</script>
 <template>
-  <div>
-    <Nav :user="user" :logout="logout" />
-    <router-view :user="user" />
-  </div>
+  <Nav :user="user" :logout="logout" />
+  <router-view />
 </template>
-

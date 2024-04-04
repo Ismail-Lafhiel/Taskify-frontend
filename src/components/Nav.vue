@@ -1,20 +1,11 @@
-<script>
-export default {
-  props: {
-    user: Object,
-    logout: Function,
-  },
-  data() {
-    return {
-      dropdownOpen: false,
-    };
-  },
-  methods: {
-    toggleDropdown() {
-      this.dropdownOpen = !this.dropdownOpen;
-    },
-  },
-};
+<script setup>
+import { defineProps } from "vue";
+
+// Define props received from parent component
+const props = defineProps(['user', 'logout']);
+
+// Log the user prop to the console
+console.log('User prop in Nav:', props.user);
 </script>
 <template>
   <!-- / -->
