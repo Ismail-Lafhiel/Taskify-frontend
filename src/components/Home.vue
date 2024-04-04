@@ -84,24 +84,50 @@ onMounted(() => {
 
 // Edit an existing task
 const editTask = async (task) => {
-  const newName = prompt("Enter new task name:", task.name);
-  if (newName) {
+  const newTaskName = prompt("Enter new task name:", task.name);
+  const newTaskDescription = prompt(
+    "Enter new task description:",
+    task.description
+  );
+  const newTaskStatus = prompt("Enter new task status:", task.status);
+  if (newTaskName && newTaskDescription && newTaskStatus) {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         return;
       }
+
+      // Fetch user data to get user ID
+      await fetchUserData();
+
+      // Ensure authUser is not null before proceeding
+      if (!authUser) {
+        console.error("Error: User data not available.");
+        return;
+      }
+
+      // Create the updated task object
+      const updatedTask = {
+        ...task,
+        name: newTaskName, // Update the name field
+        description: newTaskDescription, // Update the description field
+        status: newTaskStatus, // Update the status field
+        user_id: authUser.id, // Include the user_id
+      };
+
       const response = await axios.put(
         `/api/tasks/${task.id}`,
-        { name: newName },
+        updatedTask, // Send the entire updated task object
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+
+      // Update the task in the list with the response data
       const index = tasks.value.findIndex((t) => t.id === task.id);
-      tasks.value[index] = response.data; // Update the task in the list
+      tasks.value[index] = response.data;
     } catch (error) {
       console.error("Error editing task:", error);
     }
@@ -186,5 +212,3 @@ onMounted(() => {
     </div>
   </section>
 </template>
-
-
