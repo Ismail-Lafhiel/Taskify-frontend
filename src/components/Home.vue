@@ -1,10 +1,11 @@
-<!-- Home.vue -->
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 const tasks = ref([]);
+const taskName = ref('');
 
+// Fetch tasks from the server
 const fetchTasks = async () => {
   try {
     const token = localStorage.getItem("token");
@@ -17,11 +18,70 @@ const fetchTasks = async () => {
       },
     });
     tasks.value = response.data;
-    await nextTick(); // Wait for the next tick to ensure tasks.value is updated
-    // console.log("Tasks:", tasks.value);
   } catch (error) {
     console.error("Error fetching tasks:", error);
     tasks.value = [];
+  }
+};
+
+// Add a new task
+const addTask = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return;
+    }
+    const response = await axios.post("/api/tasks/store", { name: taskName.value }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    tasks.value.push(response.data); // Add the new task to the list
+    taskName.value = ''; // Clear the task input field
+  } catch (error) {
+    console.error("Error adding task:", error);
+  }
+};
+
+// Edit an existing task
+const editTask = async (task) => {
+  const newName = prompt("Enter new task name:", task.name);
+  if (newName) {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return;
+      }
+      const response = await axios.put(`/api/tasks/${task.id}`, { name: newName }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const index = tasks.value.findIndex(t => t.id === task.id);
+      tasks.value[index] = response.data; // Update the task in the list
+    } catch (error) {
+      console.error("Error editing task:", error);
+    }
+  }
+};
+
+// Delete a task
+const deleteTask = async (taskId) => {
+  if (confirm("Are you sure you want to delete this task?")) {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return;
+      }
+      await axios.delete(`/api/tasks/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      tasks.value = tasks.value.filter(task => task.id !== taskId); // Remove the deleted task from the list
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
   }
 };
 
@@ -33,22 +93,26 @@ onMounted(() => {
 <template>
   <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5">
     <div class="mx-auto max-w-screen-xl px-4 lg:px-12">
-      <div
-        class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden"
-      >
+      <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+        <!-- Task input form -->
+        <form @submit.prevent="addTask">
+          <input v-model="taskName" type="text" placeholder="Enter task name" class="border-b border-gray-300 p-2 w-full">
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 mt-2">Add Task</button>
+        </form>
+
+        <!-- Task list -->
         <ul>
-          <li v-for="task in tasks" :key="task.id">
-            <div class="mb-4">
-              <h3 class="text-lg font-semibold">{{ task.name }}</h3>
-              <p class="text-gray-500">{{ task.description }}</p>
-              <p>Status: {{ task.status }}</p>
-              <p>User ID: {{ task.user_id }}</p>
+          <li v-for="task in tasks" :key="task.id" class="flex justify-between items-center border-b border-gray-300 py-2">
+            <span>{{ task.name }}</span>
+            <div>
+              <button @click="editTask(task)" class="text-blue-500 mr-2">Edit</button>
+              <button @click="deleteTask(task.id)" class="text-red-500">Delete</button>
             </div>
-            <hr class="border-t border-gray-200 dark:border-gray-700">
           </li>
         </ul>
       </div>
     </div>
   </section>
 </template>
+
 
